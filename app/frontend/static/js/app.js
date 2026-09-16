@@ -31,17 +31,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    document.querySelectorAll(".message:not(.user) .message-content span").forEach((element) => {
+    document.querySelectorAll(".message:not(.user) .message-body").forEach((element) => {
         renderMarkdown(element, element.textContent);
     });
 
     const addMessage = (name, text, isUser) => {
         const message = document.createElement("article");
+        message.className = `message${isUser ? " user" : ""}`;
         const avatarHtml = isUser
             ? (name ? name[0].toUpperCase() : "Y")
             : '<img class="avatar-icon" src="/static/images/webllama_dark.ico" alt="Webllama">';
-        message.innerHTML = `<div class="avatar">${avatarHtml}</div><div class="message-content"><strong>${name}</strong><span></span></div>`;
-        const body = message.querySelector("span");
+        message.innerHTML = `<div class="avatar">${avatarHtml}</div><div class="message-content"><strong>${name}</strong><div class="message-body"></div></div>`;
+        const body = message.querySelector(".message-body");
         if (isUser) {
             body.textContent = text;
         } else {
@@ -55,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const removeMessage = (name, text) => {
         document.querySelectorAll(".message").forEach((message) => {
             const messageName = message.querySelector("strong")?.textContent;
-            const messageText = message.querySelector("span")?.textContent;
+            const messageText = message.querySelector(".message-body")?.textContent;
             if (messageName === name && messageText === text) {
                 message.remove();
             }
@@ -94,8 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     thinkingMessage.remove();
                     const message = document.createElement("article");
                     message.className = "message";
-                    message.innerHTML = '<div class="avatar"><img class="avatar-icon" src="/static/images/webllama_dark.ico" alt="Webllama"></div><div class="message-content"><strong>Webllama</strong><span></span></div>';
-                    const body = message.querySelector("span");
+                    message.innerHTML = '<div class="avatar"><img class="avatar-icon" src="/static/images/webllama_dark.ico" alt="Webllama"></div><div class="message-content"><strong>Webllama</strong><div class="message-body"></div></div>';
+                    const body = message.querySelector(".message-body");
                     let content = "";
                     conversation.append(message);
                     await readStream(response, (event) => {

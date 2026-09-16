@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         conversation.append(message);
         conversation.scrollTop = conversation.scrollHeight;
+        return message;
     };
     
     const removeMessage = (name, text) => {
@@ -75,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const sendButton = chatForm.querySelector("button[type='submit']");
         sendButton.disabled = true;
         const chatId = chatForm.dataset.chatId;
-        addMessage("Webllama", "Thinking...", false);
+        const thinkingMessage = addMessage("Webllama", "Thinking...", false);
         if (chatId) {
             try {
                 const response = await fetch(`/api/send-prompt/chat_id=${encodeURIComponent(chatId)}`, {
@@ -88,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error(result.error || "Could not send the prompt.");
                 }
                 if (response.headers.get("content-type")?.includes("application/x-ndjson")) {
-                    removeMessage("Webllama", "Thinking...");
+                    thinkingMessage.remove();
                     const message = document.createElement("article");
                     message.className = "message";
                     message.innerHTML = '<div class="avatar">W</div><div class="message-content"><strong>Webllama</strong><span></span></div>';
@@ -111,13 +112,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     const result = await response.json();
                     document.querySelector("[data-chat-title]").textContent = result.title;
                     addMessage(`Webllama · ${result.model}`, result.response, false);
-                    removeMessage("Webllama", "Thinking...");
+                    thinkingMessage.remove();
                 }
             } catch (error) {
+                thinkingMessage.remove();
                 addMessage("Webllama", error.message || "Could not send the prompt.", false);
             } finally {
                 sendButton.disabled = false;
             }
+        } else {
+            thinkingMessage.remove();
+            sendButton.disabled = false;
         }
     });
 

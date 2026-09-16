@@ -4,13 +4,17 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import timedelta
+from pathlib import Path
 
 app = Flask(__name__, template_folder='frontend/templates', static_folder='frontend/static')
 oauth = OAuth(app)
 bcrypt = Bcrypt(app)
 
-database_path = os.getenv('DATABASE_PATH') or os.path.join(app.root_path, 'backend', 'data', 'webllama.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{database_path}"
+database_path = Path(
+    os.getenv('DATABASE_PATH') or os.path.join(app.root_path, 'backend', 'data', 'webllama.db')
+).resolve()
+database_path.parent.mkdir(parents=True, exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{database_path.as_posix()}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['OLLAMA_CONTEXT_WINDOW'] = max(1024, int(os.getenv('OLLAMA_CONTEXT_WINDOW', '4096')))
 

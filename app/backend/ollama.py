@@ -106,6 +106,44 @@ def generate_chat_response(
     except requests.RequestException as error:
         raise OllamaRequestError("Could not get a response from Ollama.") from error
 
+
+def stream_chat_response(
+    base_url: str,
+    messages: list[dict[str, str]],
+    context_window_tokens: int,
+    selected_model: str | None = None,
+):
+    try:
+        base_url = base_url.rstrip("/")
+        models = list_ollama_models(base_url)
+        if not models:
+            raise OllamaRequestError("No Ollama models are installed.")
+
+        installed_models = {model.get("name") for model in models}
+        model_name = selected_model or models[0].get("name")
+        if model_name not in installed_models:
+            raise OllamaRequestError("The selected model is not installed.")
+        if not model_name:
+            raise OllamaRequestError("Ollama did not return a usable model.")
+
+        response = requests.post(
+            f"{base_url}/api/chat",
+            json={
+                "model": model_name,
+                "messages": messages,
+                "stream": True,
+                "options": {"num_ctx": context_window_tokens, "num_predict": 512},
+            },
+            timeout=120,
+            stream=True,
+        )
+        response.raise_for_status()
+        for event in response.iter_lines(decode_unicode=True):
+            if event:
+                yield event, model_name
+    except requests.RequestException as error:
+        raise OllamaRequestError("Could not get a response from Ollama.") from error
+
 def create_openai_client(api_key: str) -> OpenAI:
     return OpenAI(api_key=api_key)
 

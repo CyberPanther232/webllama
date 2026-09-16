@@ -1,13 +1,14 @@
 from .. import app, oauth
+import json
 import os
 
-from flask import abort, flash, jsonify, redirect, url_for, render_template, request, session
+from flask import Response, abort, flash, jsonify, redirect, stream_with_context, url_for, render_template, request, session
 from authlib.integrations.base_client.errors import OAuthError
 from .. import bcrypt
 import requests
 from .database import add_chat_message, build_chat_context, create_chat, get_chat_messages, get_context_window_tokens, get_oauth_settings, get_ollama_connection, get_settings, get_user_chat, get_user_chats, save_oauth_settings, save_ollama_connection, save_selected_model, save_settings, set_chat_title_from_prompt
 from .auth import authenticate_user, csrf_protect, get_current_user, get_or_create_oidc_user, login_required, login_user, logout_user, register_user, safe_next_url
-from .ollama import OllamaRequestError, delete_ollama_model, generate_chat_response, list_ollama_models, pull_ollama_model
+from .ollama import OllamaRequestError, delete_ollama_model, generate_chat_response, list_ollama_models, pull_ollama_model, stream_chat_response
 
 
 def get_effective_ollama_connection(user_id: int):
@@ -274,6 +275,26 @@ def send_prompt(chat_id):
     context_window = get_context_window_tokens()
     messages, context_tokens = build_chat_context(chat, context_window)
     requested_model = str((request.get_json(silent=True) or {}).get("model", "")).strip() or None
+    if get_settings()["stream_responses"]:
+        def generate_stream():
+            response_parts = []
+            try:
+                for event, model in stream_chat_response(base_url, messages, context_window, requested_model):
+                    payload = json.loads(event)
+                    content = payload.get("message", {}).get("content", "")
+                    if content:
+                        response_parts.append(content)
+                        yield json.dumps({"content": content}) + "\n"
+                    if payload.get("done"):
+                        response = "".join(response_parts).strip()
+                        if not response:
+                            raise OllamaRequestError("Ollama returned an empty response.")
+                        add_chat_message(chat, "assistant", response)
+                        yield json.dumps({"done": True, "model": model, "title": chat.title, "context_tokens": context_tokens}) + "\n"
+            except (OllamaRequestError, ValueError) as error:
+                yield json.dumps({"error": str(error)}) + "\n"
+
+        return Response(stream_with_context(generate_stream()), mimetype="application/x-ndjson")
     try:
         response, model = generate_chat_response(base_url, messages, context_window, requested_model)
     except OllamaRequestError as error:

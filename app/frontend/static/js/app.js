@@ -9,13 +9,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     const modelSelect = document.querySelector("[data-model-select]");
 
+    const renderMarkdown = (element, text) => {
+        if (window.marked && window.DOMPurify) {
+            element.innerHTML = window.DOMPurify.sanitize(window.marked.parse(text));
+        } else {
+            element.textContent = text;
+        }
+    };
+
+    const readStream = async (response, onEvent) => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+            const { done, value } = await reader.read();
+            buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+            const events = buffer.split("\n");
+            buffer = events.pop();
+            events.filter(Boolean).forEach((event) => onEvent(JSON.parse(event)));
+            if (done) break;
+        }
+    };
+
+    document.querySelectorAll(".message:not(.user) .message-content span").forEach((element) => {
+        renderMarkdown(element, element.textContent);
+    });
+
     const addMessage = (name, text, isUser) => {
         const message = document.createElement("article");
         message.className = `message${isUser ? " user" : ""}`;
         message.innerHTML = `<div class="avatar">${isUser ? "Y" : "W"}</div><div class="message-content"><strong>${name}</strong><span></span></div>`;
-        message.querySelector("span").textContent = text;
+        const body = message.querySelector("span");
+        if (isUser) {
+            body.textContent = text;
+        } else {
+            renderMarkdown(body, text);
+        }
         conversation.append(message);
         conversation.scrollTop = conversation.scrollHeight;
+    };
+    
+    const removeMessage = (name, text) => {
+        document.querySelectorAll(".message").forEach((message) => {
+            const messageName = message.querySelector("strong")?.textContent;
+            const messageText = message.querySelector("span")?.textContent;
+            if (messageName === name && messageText === text) {
+                message.remove();
+            }
+        });
     };
 
     document.querySelectorAll("[data-prompt]").forEach((button) => {
@@ -34,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const sendButton = chatForm.querySelector("button[type='submit']");
         sendButton.disabled = true;
         const chatId = chatForm.dataset.chatId;
+        addMessage("Webllama", "Thinking...", false);
         if (chatId) {
             try {
                 const response = await fetch(`/api/send-prompt/chat_id=${encodeURIComponent(chatId)}`, {
@@ -41,14 +83,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
                     body: JSON.stringify({ prompt, model: modelSelect?.value }),
                 });
-                const result = await response.json();
                 if (!response.ok) {
+                    const result = await response.json();
                     throw new Error(result.error || "Could not send the prompt.");
                 }
-                document.querySelector("[data-chat-title]").textContent = result.title;
-                addMessage(`Webllama · ${result.model}`, result.response);
+                if (response.headers.get("content-type")?.includes("application/x-ndjson")) {
+                    removeMessage("Webllama", "Thinking...");
+                    const message = document.createElement("article");
+                    message.className = "message";
+                    message.innerHTML = '<div class="avatar">W</div><div class="message-content"><strong>Webllama</strong><span></span></div>';
+                    const body = message.querySelector("span");
+                    let content = "";
+                    conversation.append(message);
+                    await readStream(response, (event) => {
+                        if (event.error) throw new Error(event.error);
+                        if (event.content) {
+                            content += event.content;
+                            renderMarkdown(body, content);
+                            conversation.scrollTop = conversation.scrollHeight;
+                        }
+                        if (event.done) {
+                            message.querySelector("strong").textContent = `Webllama · ${event.model}`;
+                            document.querySelector("[data-chat-title]").textContent = event.title;
+                        }
+                    });
+                } else {
+                    const result = await response.json();
+                    document.querySelector("[data-chat-title]").textContent = result.title;
+                    addMessage(`Webllama · ${result.model}`, result.response, false);
+                    removeMessage("Webllama", "Thinking...");
+                }
             } catch (error) {
-                addMessage("Webllama", error.message || "Could not send the prompt.");
+                addMessage("Webllama", error.message || "Could not send the prompt.", false);
             } finally {
                 sendButton.disabled = false;
             }

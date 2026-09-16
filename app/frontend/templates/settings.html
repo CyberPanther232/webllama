@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Webllama | Settings{% endblock %}
+{% block body %}
+<div class="app-layout">
+	<aside class="sidebar"><a class="brand" href="{{ url_for('index') }}"><span class="brand-mark"><i data-lucide="bot"></i></span>Webllama</a>{% include "_new_chat_form.html" %}<nav class="nav"><span class="nav-label">Workspace</span><a href="{{ url_for('index') }}"><i data-lucide="layout-dashboard"></i>Overview</a><a href="{{ url_for('chats') }}"><i data-lucide="message-square"></i>Chats</a><span class="nav-label">System</span><a class="active" href="{{ url_for('settings') }}"><i data-lucide="sliders-horizontal"></i>Settings</a><a href="{{ url_for('models') }}"><i data-lucide="boxes"></i>Models</a><a href="{{ url_for('about') }}"><i data-lucide="circle-help"></i>About</a></nav>{% include "_sidebar_profile.html" %}</aside>
+	<main class="page settings-wrap">
+        <header class="topbar">
+            <div>
+                <span class="eyebrow">System configuration</span>
+                <h1>Make Webllama yours.</h1>
+                <p class="intro">Configure your local model connection, privacy, and sign-in provider.</p>
+            </div>
+        </header>
+        <div class="settings-list">
+            <section class="panel setting">
+                <div class="setting-head"><i data-lucide="server"></i><div><h2>Ollama connection</h2><p>Point Webllama to the Ollama server running on your network.</p></div></div>
+                <div class="field-row"><input class="text-input" data-base-url type="url" value="{{ base_url }}" aria-label="Ollama base URL"><button class="secondary-button" data-test-connection type="button">Test connection</button></div>
+                <div class="connection-state" data-connection-state>Using {{ base_url_source }}</div>
+            </section>
+            <section class="panel setting">
+                <div class="setting-head"><i data-lucide="braces"></i><div><h2>Context window</h2><p>Maximum conversation context sent to Ollama. Larger values use more memory.</p></div></div>
+                <div class="field-row"><input class="text-input" data-context-window type="number" min="1024" max="32768" step="256" value="{{ context_window_tokens }}" aria-label="Context window tokens"><span class="token-label">tokens</span></div>
+            </section>
+            <section class="panel setting setting-toggle"><div class="setting-head"><i data-lucide="hard-drive"></i><div><h2>Keep conversations local</h2><p>Store chat history only on this device.</p></div></div><label class="switch" title="Keep conversations local"><input data-keep-local type="checkbox" {% if settings.keep_conversations_local %}checked{% endif %}><span class="slider"></span></label></section>
+            <section class="panel setting setting-toggle"><div class="setting-head"><i data-lucide="sparkles"></i><div><h2>Streaming responses</h2><p>Show model output as it is generated.</p></div></div><label class="switch" title="Enable streaming responses"><input data-stream-responses type="checkbox" {% if settings.stream_responses %}checked{% endif %}><span class="slider"></span></label></section>
+            <section class="panel setting oauth-setting">
+                <div class="setting-head"><i data-lucide="key-round"></i><div><h2>OAuth configuration</h2><p>Set the provider details used for external sign-in.</p></div></div>
+                <div class="oauth-grid">
+                    <label class="form-field">Provider<select class="text-input" data-oauth-provider><option value="" {% if not oauth_settings.oauth_provider %}selected{% endif %}>Not configured</option><option value="github" {% if oauth_settings.oauth_provider == 'github' %}selected{% endif %}>GitHub</option><option value="google" {% if oauth_settings.oauth_provider == 'google' %}selected{% endif %}>Google</option><option value="microsoft" {% if oauth_settings.oauth_provider == 'microsoft' %}selected{% endif %}>Microsoft</option><option value="custom" {% if oauth_settings.oauth_provider == 'custom' %}selected{% endif %}>Custom OIDC</option></select><small>Using {{ oauth_sources.oauth_provider }}</small></label>
+                    <label class="form-field" data-oauth-platform-field {% if oauth_settings.oauth_provider != 'custom' %}hidden{% endif %}>Platform name<input class="text-input" data-oauth-platform-name type="text" value="{{ oauth_settings.oauth_platform_name }}" placeholder="e.g. Okta Workforce" autocomplete="organization"><small>Using {{ oauth_sources.oauth_platform_name }}</small></label>
+                    <label class="form-field oauth-full" data-oauth-issuer-field {% if oauth_settings.oauth_provider != 'custom' %}hidden{% endif %}>Issuer URL<input class="text-input" data-oauth-issuer-url type="url" value="{{ oauth_settings.oauth_issuer_url }}" placeholder="https://identity.example.com" autocomplete="url"><small>Using {{ oauth_sources.oauth_issuer_url }}</small></label>
+                    <label class="form-field">Client ID<input class="text-input" data-oauth-client-id type="text" value="{{ oauth_settings.oauth_client_id }}" autocomplete="off"><small>Using {{ oauth_sources.oauth_client_id }}</small></label>
+                    <label class="form-field oauth-full">Redirect URI<span class="oauth-redirect-input"><input class="text-input" data-oauth-redirect-uri type="url" value="{{ oauth_settings.oauth_redirect_uri }}" placeholder="https://example.com/auth/callback" autocomplete="off"><button class="icon-button" data-generate-redirect-uri type="button" title="Generate redirect URI" aria-label="Generate redirect URI"><i data-lucide="wand-sparkles"></i></button></span><small>Using {{ oauth_sources.oauth_redirect_uri }}</small></label>
+                </div>
+                <div class="oauth-secret-note"><i data-lucide="lock-keyhole"></i><span>Configure the client secret securely with the <code>OAUTH_CLIENT_SECRET</code> environment variable.</span></div>
+            </section>
+            <div class="settings-save"><button class="primary-button" data-save-settings type="button"><i data-lucide="save"></i>Save settings</button><div class="connection-state" data-save-state></div></div>
+        </div>
+    </main>
+</div>
+{% endblock %}

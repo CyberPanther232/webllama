@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Webllama | Home{% endblock %}
+{% block body %}
+<div class="app-layout">
+    <aside class="sidebar">
+        <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark"><i data-lucide="bot"></i></span>Webllama</a>
+        {% include "_new_chat_form.html" %}
+        <nav class="nav"><span class="nav-label">Workspace</span><a class="active" href="{{ url_for('index') }}"><i data-lucide="layout-dashboard"></i>Overview</a><a href="{{ url_for('chats') }}"><i data-lucide="message-square"></i>Chats</a><span class="nav-label">System</span><a href="{{ url_for('settings') }}"><i data-lucide="sliders-horizontal"></i>Settings</a><a href="{{ url_for('models') }}"><i data-lucide="boxes"></i>Models</a><a href="{{ url_for('about') }}"><i data-lucide="circle-help"></i>About</a></nav>
+        {% include "_sidebar_profile.html" %}
+    </aside>
+    <main class="page">
+        <header class="topbar"><div><span class="eyebrow">Local AI workspace</span></div><span class="status"><span class="status-dot"></span>Ollama ready</span></header>
+        <section><h1>Thoughtful conversations, close to home.</h1><p class="intro">A focused space for exploring ideas with your local models. Nothing leaves your machine unless you choose it.</p></section>
+        <section class="overview-grid"><article class="panel feature-panel"><div class="feature-icon"><i data-lucide="message-circle"></i></div><div><h2>Start with a blank page.</h2><p>Ask a question, draft something, or follow a thread of thought. Your next conversation is ready when you are.</p><form class="inline-new-chat" action="{{ url_for('new_chat') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="action-link" type="submit">Open chat <i data-lucide="arrow-up-right"></i></button></form></div></article><aside class="panel stats-panel"><h3>Workspace</h3><div class="metric"><strong>Local</strong><span>Inference</span></div><div class="metric"><strong>Private</strong><span>Data path</span></div><div class="metric"><strong>Ready</strong><span>Connection</span></div></aside></section>
+        <section><div class="section-heading"><div><h2>Pick up where you left off</h2><p>Common ways to make use of your local assistant.</p></div></div><div class="quick-grid"><a class="panel quick-card" href="{{ url_for('chats') }}"><i data-lucide="lightbulb"></i><h3>Explore an idea</h3><p>Turn a rough thought into a clear starting point.</p></a><a class="panel quick-card" href="{{ url_for('chats') }}"><i data-lucide="file-pen-line"></i><h3>Draft and refine</h3><p>Shape words with an assistant that stays local.</p></a><a class="panel quick-card" href="{{ url_for('settings') }}"><i data-lucide="cpu"></i><h3>Configure model</h3><p>Choose the local endpoint that powers your chats.</p></a></div></section>
+    </main>
+</div>
+{% endblock %}

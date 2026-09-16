@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Webllama | Chats{% endblock %}
+{% block body %}
+<div class="app-layout">
+    <aside class="sidebar">
+        <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark"><i data-lucide="bot"></i></span>Webllama</a>
+        {% include "_new_chat_form.html" %}
+        <nav class="nav"><span class="nav-label">Workspace</span><a href="{{ url_for('index') }}"><i data-lucide="layout-dashboard"></i>Overview</a><a class="active" href="{{ url_for('chats') }}"><i data-lucide="message-square"></i>Chats</a><span class="nav-label">System</span><a href="{{ url_for('settings') }}"><i data-lucide="sliders-horizontal"></i>Settings</a><a href="{{ url_for('models') }}"><i data-lucide="boxes"></i>Models</a><a href="{{ url_for('about') }}"><i data-lucide="circle-help"></i>About</a></nav>
+        {% include "_sidebar_profile.html" %}
+    </aside>
+    <main class="page chats-page">
+        <header class="topbar"><span class="eyebrow">Conversation library</span><div class="model-actions"><select class="model-select" data-model-select aria-label="Select Ollama model">{% for model in models %}<option value="{{ model.name }}" {% if model.name == selected_model or (not selected_model and loop.first) %}selected{% endif %}>{{ model.name }}</option>{% else %}<option value="">No models installed</option>{% endfor %}</select><button class="icon-button model-delete" data-delete-model="{{ selected_model or (models[0].name if models else '') }}" type="button" title="Delete selected model" {% if not models %}disabled{% endif %}><i data-lucide="trash-2"></i></button></div></header>
+        <section><h1>Your chats.</h1><p class="intro">Every conversation you start is available here.</p></section>
+        <section class="chat-list">
+            {% for chat in chats %}
+            <a class="panel chat-list-item" href="{{ url_for('chat', chat_id=chat.chat_id) }}"><span class="chat-list-icon"><i data-lucide="message-square"></i></span><span><strong>{{ chat.title }}</strong><small>{% if chat.date_created %}{{ chat.date_created.strftime('%b %d, %Y at %H:%M') }}{% else %}Recently created{% endif %}</small></span><i data-lucide="chevron-right"></i></a>
+            {% else %}
+            <div class="panel empty-chats"><i data-lucide="messages-square"></i><h2>No conversations yet.</h2><p>Start a new conversation to see it here.</p></div>
+            {% endfor %}
+        </section>
+    </main>
+</div>
+{% endblock %}

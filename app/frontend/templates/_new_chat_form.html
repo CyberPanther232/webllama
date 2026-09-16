@@ -1,0 +1,4 @@
+<form class="new-chat-form" action="{{ url_for('new_chat') }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="new-chat" type="submit"><i data-lucide="square-pen"></i>New conversation</button>
+</form>

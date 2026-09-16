@@ -1,0 +1,13 @@
+{% if current_user %}
+<div class="sidebar-footer">
+    <form class="profile-form" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="profile profile-button" type="submit" title="Sign out">
+            <span class="avatar">{{ current_user.username[0] | upper }}</span>
+            <span class="profile-copy">{{ current_user.username }}<span>Sign out</span></span>
+        </button>
+    </form>
+</div>
+{% else %}
+<div class="sidebar-footer"><a class="profile" href="{{ url_for('login') }}"><span class="avatar">G</span><span class="profile-copy">Guest<span>Sign in to sync</span></span></a></div>
+{% endif %}

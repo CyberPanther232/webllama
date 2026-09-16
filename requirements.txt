@@ -1,0 +1,6 @@
+Authlib
+Flask
+Flask-Bcrypt
+Flask-SQLAlchemy
+openai
+requests

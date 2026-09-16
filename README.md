@@ -45,6 +45,25 @@ python -m flask --app app run --debug
 
 Open `http://127.0.0.1:5000`, create an account, then open **Settings** to test and save the Ollama server URL. The default is `http://localhost:11434`.
 
+## Run with Docker
+
+Docker Compose starts Webllama, Ollama, and persistent volumes for both the application database and downloaded models:
+
+```powershell
+$env:SECRET_KEY = "replace-with-a-long-random-secret"
+docker compose up --build -d
+```
+
+Open `http://127.0.0.1:5000`. In the container network, Webllama automatically connects to Ollama at `http://ollama:11434`.
+
+Pull a model through the Webllama **Models** page, or run:
+
+```powershell
+docker compose exec ollama ollama pull llama3.2
+```
+
+To use a different web port, set `WEBLLAMA_PORT` before starting Compose. GPU access is configured for NVIDIA-enabled Docker installations; remove the `deploy.resources` block in `docker-compose.yml` to run Ollama without it.
+
 ## Configuration
 
 All configuration is optional. Environment variables take precedence over saved values where applicable.

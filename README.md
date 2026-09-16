@@ -1,5 +1,9 @@
 # Webllama
 
+<p align="center">
+  <img src="app/frontend/static/images/webllama_dark.jpg" alt="Webllama" width="320">
+</p>
+
 Webllama is a Flask web interface for chatting with Ollama models. It keeps chat history in a local SQLite database and supports local accounts, optional OIDC sign-in, per-user Ollama connections, and model management.
 
 ## Features

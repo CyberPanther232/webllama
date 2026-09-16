@@ -277,4 +277,48 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    document.querySelectorAll("[data-delete-chat]").forEach((button) => {
+        button.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const chatId = button.dataset.deleteChat;
+            const chatTitle = button.dataset.chatTitle || "this conversation";
+            if (!chatId) return;
+            if (!window.confirm(`Delete "${chatTitle}"? This cannot be undone.`)) return;
+
+            button.disabled = true;
+            try {
+                const response = await fetch(`/api/delete-chat/chat_id=${encodeURIComponent(chatId)}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken,
+                    },
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || "Could not delete conversation.");
+                }
+
+                const row = button.closest(".chat-list-item");
+                if (row) {
+                    row.remove();
+                }
+                const remainingChats = document.querySelectorAll(".chat-list-item");
+                if (remainingChats.length === 0) {
+                    const chatList = document.querySelector("[data-chat-list]");
+                    if (chatList) {
+                        chatList.innerHTML = '<div class="panel empty-chats"><i data-lucide="messages-square"></i><h2>No conversations yet.</h2><p>Start a new conversation to see it here.</p></div>';
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+                    }
+                }
+            } catch (error) {
+                window.alert(error.message || "Could not delete conversation.");
+                button.disabled = false;
+            }
+        });
+    });
+
 });

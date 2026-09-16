@@ -6,7 +6,7 @@ from flask import Response, abort, flash, jsonify, redirect, stream_with_context
 from authlib.integrations.base_client.errors import OAuthError
 from .. import bcrypt
 import requests
-from .database import add_chat_message, build_chat_context, create_chat, get_chat_messages, get_context_window_tokens, get_oauth_settings, get_ollama_connection, get_settings, get_user_chat, get_user_chats, save_oauth_settings, save_ollama_connection, save_selected_model, save_settings, set_chat_title_from_prompt
+from .database import add_chat_message, build_chat_context, create_chat, delete_user_chat, get_chat_messages, get_context_window_tokens, get_oauth_settings, get_ollama_connection, get_settings, get_user_chat, get_user_chats, save_oauth_settings, save_ollama_connection, save_selected_model, save_settings, set_chat_title_from_prompt
 from .auth import authenticate_user, csrf_protect, get_current_user, get_or_create_oidc_user, login_required, login_user, logout_user, register_user, safe_next_url
 from .ollama import OllamaRequestError, delete_ollama_model, generate_chat_response, list_ollama_models, pull_ollama_model, stream_chat_response
 
@@ -322,10 +322,24 @@ def chat_history(chat_id):
         "date_created": message.date_created.isoformat(),
     } for message in messages])
 
-@app.route("/api/delete-chat/chat_id=<chat_id>", methods=["POST"])
+@app.route("/api/delete-chat/chat_id=<chat_id>", methods=["POST", "DELETE"])
 @login_required
+@csrf_protect
 def delete_chat(chat_id):
-    return jsonify(error="Chat deletion has not been implemented."), 501
+    if not delete_user_chat(chat_id, get_current_user().id):
+        return jsonify(error="Chat not found."), 404
+    return jsonify(message="Chat deleted.", chat_id=chat_id)
+
+
+@app.route("/chats/<chat_id>/delete", methods=["POST"])
+@login_required
+@csrf_protect
+def delete_chat_form(chat_id):
+    if delete_user_chat(chat_id, get_current_user().id):
+        flash("Chat deleted successfully.")
+    else:
+        flash("Chat not found.")
+    return redirect(url_for("chats"))
 
 @app.route("/api/list-chats", methods=["GET"])
 @login_required

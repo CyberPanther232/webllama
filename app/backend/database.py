@@ -254,6 +254,16 @@ def get_user_chat(chat_id: str, user_id: int) -> OllamaChat | None:
     return OllamaChat.query.filter_by(chat_id=chat_id, user_id=user_id).first()
 
 
+def delete_user_chat(chat_id: str, user_id: int) -> bool:
+    chat = get_user_chat(chat_id, user_id)
+    if chat is None:
+        return False
+    OllamaChatHistory.query.filter_by(chat_id=chat.id).delete()
+    db.session.delete(chat)
+    db.session.commit()
+    return True
+
+
 def set_chat_title_from_prompt(chat: OllamaChat, prompt: str) -> OllamaChat:
     if chat.title == "New conversation":
         words = prompt.split()

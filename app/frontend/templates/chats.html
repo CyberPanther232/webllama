@@ -10,10 +10,39 @@
     </aside>
     <main class="page chats-page">
         <header class="topbar"><span class="eyebrow">Conversation library</span><div class="model-actions"><select class="model-select" data-model-select aria-label="Select Ollama model">{% for model in models %}<option value="{{ model.name }}" {% if model.name == selected_model or (not selected_model and loop.first) %}selected{% endif %}>{{ model.name }}</option>{% else %}<option value="">No models installed</option>{% endfor %}</select><button class="icon-button model-delete" data-delete-model="{{ selected_model or (models[0].name if models else '') }}" type="button" title="Delete selected model" {% if not models %}disabled{% endif %}><i data-lucide="trash-2"></i></button></div></header>
-        <section><h1>Your chats.</h1><p class="intro">Every conversation you start is available here.</p></section>
-        <section class="chat-list">
+        <section>
+            <h1>Your chats.</h1>
+            <p class="intro">Every conversation you start is available here.</p>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+            <div class="flash">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </section>
+        <section class="chat-list" data-chat-list>
             {% for chat in chats %}
-            <a class="panel chat-list-item" href="{{ url_for('chat', chat_id=chat.chat_id) }}"><span class="chat-list-icon"><i data-lucide="message-square"></i></span><span><strong>{{ chat.title }}</strong><small>{% if chat.date_created %}{{ chat.date_created.strftime('%b %d, %Y at %H:%M') }}{% else %}Recently created{% endif %}</small></span><i data-lucide="chevron-right"></i></a>
+            <article class="panel chat-list-item" data-chat-item="{{ chat.chat_id }}">
+                <a class="chat-list-link" href="{{ url_for('chat', chat_id=chat.chat_id) }}">
+                    <span class="chat-list-icon"><i data-lucide="message-square"></i></span>
+                    <span class="chat-list-copy">
+                        <strong>{{ chat.title }}</strong>
+                        <small>{% if chat.date_created %}{{ chat.date_created.strftime('%b %d, %Y at %H:%M') }}{% else %}Recently created{% endif %}</small>
+                    </span>
+                </a>
+                <div class="chat-list-actions">
+                    <form class="chat-delete-form" method="post" action="{{ url_for('delete_chat_form', chat_id=chat.chat_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button class="icon-button chat-delete" data-delete-chat="{{ chat.chat_id }}" data-chat-title="{{ chat.title }}" type="submit" title="Delete conversation" aria-label="Delete {{ chat.title }}">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </form>
+                    <a class="chat-list-arrow" href="{{ url_for('chat', chat_id=chat.chat_id) }}" tabindex="-1" aria-hidden="true">
+                        <i data-lucide="chevron-right"></i>
+                    </a>
+                </div>
+            </article>
             {% else %}
             <div class="panel empty-chats"><i data-lucide="messages-square"></i><h2>No conversations yet.</h2><p>Start a new conversation to see it here.</p></div>
             {% endfor %}

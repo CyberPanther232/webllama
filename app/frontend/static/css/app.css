@@ -112,14 +112,21 @@ h3 { margin-bottom: 6px; font-size: 15px; }
 .message-content th, .message-content td { padding: 6px 10px; border: 1px solid #38413d; text-align: left; }
 .message.user .avatar { color: #1d2618; background: var(--lime); }
 .chat-list { display: grid; gap: 10px; margin-top: 38px; }
-.chat-list-item { display: grid; grid-template-columns: 36px minmax(0, 1fr) 20px; align-items: center; gap: 13px; padding: 17px; }
+.chat-list-item { display: flex; align-items: center; justify-content: space-between; gap: 13px; padding: 14px 17px; transition: border-color .15s, background-color .15s; }
 .chat-list-item:hover { border-color: #587154; background: var(--surface-raised); }
-.chat-list-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 5px; background: #26332a; color: var(--lime); }
-.chat-list-icon svg, .chat-list-item > svg { width: 18px; }
-.chat-list-item > svg { color: var(--muted); }
-.chat-list-item strong, .chat-list-item small { display: block; }
-.chat-list-item strong { font-size: 14px; }
-.chat-list-item small { margin-top: 4px; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.chat-list-link { display: flex; align-items: center; gap: 13px; min-width: 0; flex: 1; text-decoration: none; color: inherit; }
+.chat-list-icon { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 5px; background: #26332a; color: var(--lime); }
+.chat-list-icon svg { width: 18px; }
+.chat-list-copy { min-width: 0; flex: 1; }
+.chat-list-copy strong, .chat-list-copy small { display: block; }
+.chat-list-copy strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-list-copy small { margin-top: 4px; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.chat-list-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.chat-delete-form { margin: 0; display: inline-flex; }
+.chat-delete:hover { border-color: var(--coral); color: var(--coral); }
+.chat-list-arrow { display: grid; place-items: center; color: var(--muted); padding: 4px; }
+.chat-list-arrow svg { width: 18px; }
+.chat-list-arrow:hover { color: var(--text); }
 .empty-chats { padding: 34px; text-align: center; }
 .empty-chats > svg { width: 26px; margin-bottom: 12px; color: var(--lime); }
 .empty-chats p { margin: 0; color: var(--muted); font-size: 13px; }

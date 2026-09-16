@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import timedelta
 
-app = Flask(__name__, host=os.getenv('FLASK_HOST', '127.0.0.1'), port=int(os.getenv('FLASK_PORT', '5000')), template_folder='frontend/templates', static_folder='frontend/static')
+app = Flask(__name__, template_folder='frontend/templates', static_folder='frontend/static')
 oauth = OAuth(app)
 bcrypt = Bcrypt(app)
 

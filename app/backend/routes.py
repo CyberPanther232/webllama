@@ -2,7 +2,7 @@ from .. import app, oauth
 import json
 import os
 
-from flask import Response, abort, flash, jsonify, redirect, stream_with_context, url_for, render_template, request, session
+from flask import Response, abort, flash, jsonify, redirect, send_from_directory, stream_with_context, url_for, render_template, request, session
 from authlib.integrations.base_client.errors import OAuthError
 from .. import bcrypt
 import requests
@@ -78,6 +78,14 @@ def get_oidc_client(configuration: dict[str, str]):
         client_kwargs={"scope": "openid email profile"},
     )
     return oauth.create_client("oidc")
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, "frontend", "static", "images"),
+        "webllama_dark.ico",
+        mimetype="image/x-icon",
+    )
 
 @app.route('/', methods=["GET"])
 def index():

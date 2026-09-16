@@ -3,7 +3,7 @@
 {% block body %}
 <div class="app-layout">
     <aside class="sidebar">
-        <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark"><i data-lucide="bot"></i></span>Webllama</a>
+        <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark"><img src="{{ url_for('static', filename='images/webllama_dark.ico') }}" alt="Webllama"></span>Webllama</a>
         {% include "_new_chat_form.html" %}
         <nav class="nav"><span class="nav-label">Workspace</span><a class="active" href="{{ url_for('index') }}"><i data-lucide="layout-dashboard"></i>Overview</a><a href="{{ url_for('chats') }}"><i data-lucide="message-square"></i>Chats</a><span class="nav-label">System</span><a href="{{ url_for('settings') }}"><i data-lucide="sliders-horizontal"></i>Settings</a><a href="{{ url_for('models') }}"><i data-lucide="boxes"></i>Models</a><a href="{{ url_for('about') }}"><i data-lucide="circle-help"></i>About</a></nav>
         {% include "_sidebar_profile.html" %}

@@ -37,8 +37,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const addMessage = (name, text, isUser) => {
         const message = document.createElement("article");
-        message.className = `message${isUser ? " user" : ""}`;
-        message.innerHTML = `<div class="avatar">${isUser ? "Y" : "W"}</div><div class="message-content"><strong>${name}</strong><span></span></div>`;
+        const avatarHtml = isUser
+            ? (name ? name[0].toUpperCase() : "Y")
+            : '<img class="avatar-icon" src="/static/images/webllama_dark.ico" alt="Webllama">';
+        message.innerHTML = `<div class="avatar">${avatarHtml}</div><div class="message-content"><strong>${name}</strong><span></span></div>`;
         const body = message.querySelector("span");
         if (isUser) {
             body.textContent = text;
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     thinkingMessage.remove();
                     const message = document.createElement("article");
                     message.className = "message";
-                    message.innerHTML = '<div class="avatar">W</div><div class="message-content"><strong>Webllama</strong><span></span></div>';
+                    message.innerHTML = '<div class="avatar"><img class="avatar-icon" src="/static/images/webllama_dark.ico" alt="Webllama"></div><div class="message-content"><strong>Webllama</strong><span></span></div>';
                     const body = message.querySelector("span");
                     let content = "";
                     conversation.append(message);

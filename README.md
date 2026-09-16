@@ -26,9 +26,18 @@ ollama pull llama3.2
 
 From the repository root, create and activate a virtual environment:
 
+#### Windows
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+```
+
+#### Linux
+
+```bash
+python3 -m venv .venv
+.\venv\bin\activate
 ```
 
 Install the application dependencies:

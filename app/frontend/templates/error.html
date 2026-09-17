@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Error {{ error_code }} | Webllama{% endblock %}
+{% block body %}
+<main class="error-page">
+    <section class="error-card" aria-labelledby="error-title">
+        <a class="error-brand" href="{{ url_for('index') }}" title="Webllama">
+            <img src="{{ url_for('static', filename='images/webllama_dark.jpg') }}" alt="Webllama">
+        </a>
+        <span class="error-code">Error {{ error_code }}</span>
+        <h1 id="error-title">This page took a wrong turn.</h1>
+        <p>{{ error_message | default('Something went wrong. Please try again later.') }}</p>
+        <a class="primary-button error-action" href="{{ url_for('index') }}"><i data-lucide="house"></i>Return home</a>
+    </section>
+</main>
+{% endblock %}

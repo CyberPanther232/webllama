@@ -6,6 +6,7 @@ from flask import Response, abort, flash, jsonify, redirect, send_from_directory
 from authlib.integrations.base_client.errors import OAuthError
 from .. import bcrypt
 import requests
+from werkzeug.exceptions import HTTPException
 from .database import add_chat_message, build_chat_context, create_chat, delete_user_chat, get_chat_messages, get_context_window_tokens, get_oauth_settings, get_ollama_connection, get_settings, get_user_chat, get_user_chats, save_oauth_settings, save_ollama_connection, save_selected_model, save_settings, set_chat_title_from_prompt
 from .auth import authenticate_user, csrf_protect, get_current_user, get_or_create_oidc_user, login_required, login_user, logout_user, register_user, safe_next_url, generate_mfa_secret, get_totp_qr_data_uri, get_totp_uri, verify_mfa_token
 from .ollama import OllamaRequestError, delete_ollama_model, generate_chat_response, list_ollama_models, pull_ollama_model, stream_chat_response
@@ -35,7 +36,18 @@ def get_effective_oauth_settings() -> tuple[dict[str, str], dict[str, str]]:
     return values, sources
 
 
+def get_effective_oidc_access() -> tuple[bool, str]:
+    environment_value = app.config["ALLOW_OIDC"]
+    if environment_value in {"enable", "enabled", "true", "1", "yes"}:
+        return True, "Environment variable"
+    if environment_value in {"disable", "disabled", "false", "0", "no"}:
+        return False, "Environment variable"
+    return get_settings()["allow_oidc"], "Saved setting"
+
+
 def get_oidc_configuration() -> dict[str, str] | None:
+    if not get_effective_oidc_access()[0]:
+        return None
     oauth_settings, _ = get_effective_oauth_settings()
     issuer_defaults = {
         "google": "Google",
@@ -49,14 +61,14 @@ def get_oidc_configuration() -> dict[str, str] | None:
         issuer_url = "https://login.microsoftonline.com/common/v2.0"
     if provider not in {"google", "microsoft", "custom"}:
         return None
-    if not all((issuer_url, oauth_settings["oauth_client_id"], oauth_settings["oauth_redirect_uri"], os.getenv("OAUTH_CLIENT_SECRET"))):
+    if not all((issuer_url, oauth_settings["oauth_client_id"], oauth_settings["oauth_redirect_uri"], app.config.get("OAUTH_CLIENT_SECRET"))):
         return None
     return {
         "provider_name": oauth_settings["oauth_platform_name"] if provider == "custom" else issuer_defaults[provider],
         "issuer_url": issuer_url.rstrip("/"),
         "client_id": oauth_settings["oauth_client_id"],
         "redirect_uri": oauth_settings["oauth_redirect_uri"],
-        "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+        "client_secret": app.config["OAUTH_CLIENT_SECRET"],
     }
 
 
@@ -79,6 +91,26 @@ def get_oidc_client(configuration: dict[str, str]):
     )
     return oauth.create_client("oidc")
 
+
+@app.errorhandler(HTTPException)
+def handle_http_error(error: HTTPException):
+    if request.path.startswith("/api/"):
+        return jsonify(error=error.description), error.code
+    return render_template("error.html", error_code=error.code, error_message=error.description), error.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error: Exception):
+    if request.path.startswith("/api/"):
+        return jsonify(error="An unexpected server error occurred."), 500
+    app.logger.exception("Unhandled request error", exc_info=error)
+    return render_template(
+        "error.html",
+        error_code=500,
+        error_message="Something went wrong while processing your request.",
+    ), 500
+
+
 @app.route("/favicon.ico")
 def favicon():
     return send_from_directory(
@@ -96,6 +128,7 @@ def index():
 def settings():
     base_url, connection, from_environment = get_effective_ollama_connection(get_current_user().id)
     oauth_settings, oauth_sources = get_effective_oauth_settings()
+    allow_oidc, allow_oidc_source = get_effective_oidc_access()
     return render_template(
         'settings.html',
         base_url=base_url or "http://localhost:11434",
@@ -104,6 +137,8 @@ def settings():
         context_window_tokens=get_context_window_tokens(),
         oauth_settings=oauth_settings,
         oauth_sources=oauth_sources,
+        allow_oidc=allow_oidc,
+        allow_oidc_source=allow_oidc_source,
         mfa_enabled=bool(get_current_user().mfa_secret),
     )
 
@@ -123,6 +158,10 @@ def login():
             flash("Invalid email or password.")
             return render_template("login.html", **get_oidc_login_context()), 401
         login_user(user)
+        if session.get("mfa_setup_required") is True:
+            return redirect(url_for("mfa_setup"))
+        if user.mfa_secret:
+            return redirect(url_for("mfa_verify"))
         flash('Logged in successfully.')
         return redirect(safe_next_url(request.args.get("next")) or url_for('index'))
 
@@ -144,11 +183,19 @@ def mfa_setup():
             user.mfa_secret = secret
             db.session.commit()
             session.pop("mfa_setup_secret", None)
+            session.pop("mfa_setup_required", None)
+            session["mfa_verified"] = True
             flash("Multi-factor authentication is enabled.")
             return redirect(url_for("index"))
         flash("Invalid authenticator code. Please try again.")
     uri = get_totp_uri(secret, user.username, "Webllama")
-    return render_template("mfa_setup.html", secret=secret, uri=uri, qr_data_uri=get_totp_qr_data_uri(uri))
+    return render_template(
+        "mfa_setup.html",
+        secret=secret,
+        uri=uri,
+        qr_data_uri=get_totp_qr_data_uri(uri),
+        can_cancel_mfa_setup=not app.config["FORCE_MFA"],
+    )
 
 @app.route("/mfa/verify", methods=["GET", "POST"])
 @csrf_protect
@@ -284,7 +331,7 @@ def models():
 def chat(chat_id):
     current_chat = get_user_chat(chat_id, get_current_user().id)
     if current_chat is None:
-        abort(404)
+        return render_template("error.html", error_code=404)
     base_url, connection, _ = get_effective_ollama_connection(get_current_user().id)
     installed_models = []
     if base_url:
@@ -468,6 +515,7 @@ def api_settings():
     if request.method == "GET":
         base_url, connection, from_environment = get_effective_ollama_connection(user.id)
         oauth_settings, oauth_sources = get_effective_oauth_settings()
+        allow_oidc, allow_oidc_source = get_effective_oidc_access()
         return jsonify({
             "base_url": base_url or "http://localhost:11434",
             "base_url_source": "environment" if from_environment else "saved",
@@ -475,6 +523,8 @@ def api_settings():
             "keep_conversations_local": get_settings()["keep_conversations_local"],
             "stream_responses": get_settings()["stream_responses"],
             "context_window_tokens": get_context_window_tokens(),
+            "allow_oidc": allow_oidc,
+            "allow_oidc_source": allow_oidc_source,
             "oauth": oauth_settings,
             "oauth_sources": oauth_sources,
         })
@@ -483,7 +533,8 @@ def api_settings():
     keep_local = payload.get("keep_conversations_local")
     stream_responses = payload.get("stream_responses")
     context_window_tokens = payload.get("context_window_tokens")
-    if not isinstance(keep_local, bool) or not isinstance(stream_responses, bool):
+    allow_oidc = payload.get("allow_oidc")
+    if not isinstance(keep_local, bool) or not isinstance(stream_responses, bool) or not isinstance(allow_oidc, bool):
         return jsonify(error="Toggle settings values must be booleans."), 400
     if not isinstance(context_window_tokens, int) or not 1024 <= context_window_tokens <= 32768:
         return jsonify(error="Context window must be between 1024 and 32768 tokens."), 400
@@ -506,7 +557,7 @@ def api_settings():
     if oauth_redirect_uri and not oauth_redirect_uri.startswith(("https://", "http://localhost", "http://127.0.0.1")):
         return jsonify(error="OAuth redirect URI must use HTTPS or localhost."), 400
 
-    save_settings(keep_local, stream_responses, context_window_tokens)
+    save_settings(keep_local, stream_responses, context_window_tokens, allow_oidc)
     save_oauth_settings(
         oauth_provider,
         oauth_platform_name if oauth_provider == "custom" else "",

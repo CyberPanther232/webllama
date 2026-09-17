@@ -23,6 +23,10 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', '').lower() == 'true'
+app.config['OAUTH_CLIENT_SECRET'] = os.getenv('OAUTH_CLIENT_SECRET')
+app.config['ALLOW_OIDC'] = os.getenv('ALLOW_OIDC', '').strip().lower()
+app.config['FORCE_MFA'] = os.getenv('FORCE_MFA', '').lower() == 'true'
+
 
 db = SQLAlchemy(app)
 

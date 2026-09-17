@@ -93,6 +93,7 @@ class AppSetting(db.Model):
 DEFAULT_SETTINGS = {
     "keep_conversations_local": "true",
     "stream_responses": "true",
+    "allow_oidc": "false",
 }
 DEFAULT_OAUTH_SETTINGS = {
     "oauth_provider": "",
@@ -154,11 +155,13 @@ def save_settings(
     keep_conversations_local: bool,
     stream_responses: bool,
     context_window_tokens: int,
+    allow_oidc: bool,
 ) -> None:
     settings = {
         "keep_conversations_local": keep_conversations_local,
         "stream_responses": stream_responses,
         "context_window_tokens": context_window_tokens,
+        "allow_oidc": allow_oidc,
     }
     for name, value in settings.items():
         setting = AppSetting.query.filter_by(setting_name=name).first()

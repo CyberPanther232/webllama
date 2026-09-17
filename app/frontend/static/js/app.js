@@ -157,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveSettingsButton = document.querySelector("[data-save-settings]");
     const keepLocalInput = document.querySelector("[data-keep-local]");
     const streamResponsesInput = document.querySelector("[data-stream-responses]");
+    const allowOidcInput = document.querySelector("[data-allow-oidc]");
     const contextWindowInput = document.querySelector("[data-context-window]");
     const saveState = document.querySelector("[data-save-state]");
     const oauthProviderInput = document.querySelector("[data-oauth-provider]");
@@ -216,6 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({
                     keep_conversations_local: keepLocalInput.checked,
                     stream_responses: streamResponsesInput.checked,
+                    allow_oidc: allowOidcInput?.checked ?? false,
                     context_window_tokens: Number(contextWindowInput.value),
                     oauth_provider: oauthProviderInput?.value || "",
                     oauth_platform_name: oauthPlatformNameInput?.value.trim() || "",

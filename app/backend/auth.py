@@ -9,7 +9,7 @@ import pyotp
 import qrcode
 from qrcode.image.svg import SvgImage
 
-from flask import flash, jsonify, redirect, request, session, url_for
+from flask import current_app, flash, jsonify, redirect, request, session, url_for
 
 from .. import bcrypt, db
 from .database import OidcIdentity, User
@@ -78,7 +78,9 @@ def get_or_create_oidc_user(issuer: str, claims: dict) -> tuple[User | None, str
 def login_user(user: User) -> None:
     session.clear()
     session["user_id"] = user.id
-    session["mfa_verified"] = not bool(user.mfa_secret)
+    setup_required = current_app.config["FORCE_MFA"] and not bool(user.mfa_secret)
+    session["mfa_setup_required"] = setup_required
+    session["mfa_verified"] = not bool(user.mfa_secret) and not setup_required
     session.permanent = True
 
 def logout_user() -> None:
@@ -120,10 +122,14 @@ def login_required(view):
         if user is not None and session.get("mfa_verified") is True:
             return view(*args, **kwargs)
         if user is not None:
+            if session.get("mfa_setup_required") is True:
+                if request.endpoint == "mfa_setup":
+                    return view(*args, **kwargs)
+                return redirect(url_for("mfa_setup"))
             return redirect(url_for("mfa_verify"))
         session.clear()
         if request.path.startswith("/api/"):
-            return jsonify(error="Authentication required."), 401
+            return render_template("error.html", error_code=401)
         next_url = request.full_path if request.query_string else request.path
         return redirect(url_for("login", next=next_url))
     return wrapped_view

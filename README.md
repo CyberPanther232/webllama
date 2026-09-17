@@ -89,6 +89,7 @@ All configuration is optional. Environment variables take precedence over saved 
 | `DATABASE_PATH` | `app/backend/data/webllama.db` | SQLite database location. |
 | `SECRET_KEY` | Random at startup | Flask session-signing key. Set a stable secret outside development. |
 | `SESSION_COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS. |
+| `ALLOW_OIDC` | Saved setting | Set to `enable` or `true` to require-enable OIDC, or `false` to disable it regardless of the in-app setting. |
 
 When using `flask run`, pass a custom bind address or port with Flask CLI options, for example:
 
@@ -98,7 +99,7 @@ python -m flask --app app run --host 0.0.0.0 --port 8000
 
 ## OIDC sign-in
 
-OIDC is enabled only when the issuer, client ID, redirect URI, and `OAUTH_CLIENT_SECRET` are configured. Set the client secret in the environment and enter the remaining values in **Settings**, or provide them all as environment variables:
+Enable external sign-in in **Settings** before configuring OIDC. OIDC is available only when external sign-in is enabled and the issuer, client ID, redirect URI, and `OAUTH_CLIENT_SECRET` are configured. Set the client secret in the environment and enter the remaining values in **Settings**, or provide them all as environment variables:
 
 ```powershell
 $env:OAUTH_PROVIDER = "google"

@@ -28,7 +28,11 @@
 			</div>
 			<button class="primary-button" type="submit">Enable MFA</button>
 		</form>
+		{% if can_cancel_mfa_setup %}
 		<p class="form-footer"><a href="{{ url_for('index') }}">Cancel and return home</a></p>
+		{% else %}
+		<p class="form-footer">MFA setup is required before continuing.</p>
+		{% endif %}
 	</section>
 </main>
 {% endblock %}

@@ -14,6 +14,7 @@ Webllama is a Flask web interface for chatting with Ollama models. It keeps chat
 - View, pull, and remove Ollama models from the web interface.
 - Set the chat context window from 1,024 to 32,768 tokens.
 - Sign in with a local account or optional Google, Microsoft, or custom OIDC provider.
+- Protect local accounts with time-based one-time passwords from an authenticator app.
 
 ## Prerequisites
 
@@ -47,7 +48,7 @@ python3 -m venv .venv
 Install the application dependencies:
 
 ```powershell
-python -m pip install Flask Flask-SQLAlchemy Flask-Bcrypt Authlib requests openai
+python -m pip install Flask Flask-SQLAlchemy Flask-Bcrypt Authlib requests openai pyotp
 ```
 
 Start Webllama:

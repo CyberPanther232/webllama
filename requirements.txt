@@ -3,4 +3,6 @@ Flask
 Flask-Bcrypt
 Flask-SQLAlchemy
 openai
+pyotp
+qrcode
 requests

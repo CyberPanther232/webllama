@@ -45,6 +45,7 @@ class User(db.Model):
     username = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False, unique=True, index=True)
     password = db.Column(db.String(150), nullable=False)
+    mfa_secret = db.Column(db.String(64), nullable=True)
 
 
 class OidcIdentity(db.Model):
@@ -104,6 +105,10 @@ DEFAULT_CONTEXT_WINDOW_TOKENS = 4096
 
 
 def migrate_schema() -> None:
+    user_columns = {column["name"] for column in db.inspect(db.engine).get_columns("user")}
+    if "mfa_secret" not in user_columns:
+        db.session.execute(db.text("ALTER TABLE user ADD COLUMN mfa_secret VARCHAR(64)"))
+
     connection_columns = {column["name"] for column in db.inspect(db.engine).get_columns("ollama_connection")}
     if "user_id" not in connection_columns:
         db.session.execute(db.text("ALTER TABLE ollama_connection ADD COLUMN user_id INTEGER"))

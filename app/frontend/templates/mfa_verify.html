@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Verify MFA | Webllama{% endblock %}
+{% block body %}
+<main class="auth-page">
+	<section class="auth-card">
+		<div class="auth-brand-wrap">
+			<a class="auth-brand" href="{{ url_for('index') }}" title="Webllama">
+				<img class="auth-logo" src="{{ url_for('static', filename='images/webllama_dark.jpg') }}" alt="Webllama">
+			</a>
+		</div>
+		<h1>Verify it is you.</h1>
+		<p class="intro">Enter the current six-digit code from your authenticator app.</p>
+		{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		{% for message in messages %}
+		<div class="flash">{{ message }}</div>
+		{% endfor %}
+		{% endif %}
+		{% endwith %}
+		<form class="auth-form" method="post">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<div class="form-field">
+				<label for="token">Authenticator code</label>
+				<input id="token" name="token" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autofocus autocomplete="one-time-code" placeholder="000000">
+			</div>
+			<button class="primary-button" type="submit">Verify code</button>
+		</form>
+		<form class="auth-form" method="post" action="{{ url_for('logout') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<button class="secondary-button" type="submit">Sign out</button>
+		</form>
+	</section>
+</main>
+{% endblock %}

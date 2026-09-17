@@ -3,6 +3,11 @@ from functools import wraps
 import hmac
 import secrets
 from urllib.parse import urlparse
+import base64
+import io
+import pyotp
+import qrcode
+from qrcode.image.svg import SvgImage
 
 from flask import flash, jsonify, redirect, request, session, url_for
 
@@ -73,6 +78,7 @@ def get_or_create_oidc_user(issuer: str, claims: dict) -> tuple[User | None, str
 def login_user(user: User) -> None:
     session.clear()
     session["user_id"] = user.id
+    session["mfa_verified"] = not bool(user.mfa_secret)
     session.permanent = True
 
 def logout_user() -> None:
@@ -110,8 +116,11 @@ def get_current_user() -> User | None:
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
-        if get_current_user() is not None:
+        user = get_current_user()
+        if user is not None and session.get("mfa_verified") is True:
             return view(*args, **kwargs)
+        if user is not None:
+            return redirect(url_for("mfa_verify"))
         session.clear()
         if request.path.startswith("/api/"):
             return jsonify(error="Authentication required."), 401
@@ -125,3 +134,20 @@ def safe_next_url(next_url: str | None) -> str | None:
         return None
     parsed = urlparse(next_url)
     return next_url if not parsed.netloc and not parsed.scheme else None
+
+# MFA Functions
+def generate_mfa_secret() -> str:
+    return pyotp.random_base32()
+
+def get_totp_uri(secret: str, username: str, issuer_name: str) -> str:
+    return pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name=issuer_name)
+
+def get_totp_qr_data_uri(uri: str) -> str:
+    output = io.BytesIO()
+    qrcode.make(uri, image_factory=SvgImage).save(output)
+    encoded_image = base64.b64encode(output.getvalue()).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded_image}"
+
+def verify_mfa_token(secret: str, token: str) -> bool:
+    totp = pyotp.TOTP(secret)
+    return totp.verify(token.strip(), valid_window=1)

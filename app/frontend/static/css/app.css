@@ -207,6 +207,12 @@ h3 { margin-bottom: 6px; font-size: 15px; }
 .form-field input:focus { border-color: var(--lime); }
 .auth-form .primary-button { margin-top: 8px; min-height: 44px; }
 .oidc-login-button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 800; }
+.mfa-secret { margin: 0 0 22px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--lime); padding: 13px; font-family: var(--mono); font-size: 14px; font-weight: 500; letter-spacing: 1px; overflow-wrap: anywhere; text-align: center; }
+.mfa-qr-wrap { display: flex; justify-content: center; margin: 0 0 14px; }
+.mfa-qr { width: 192px; height: 192px; border: 8px solid #fff; border-radius: 5px; background: #fff; image-rendering: pixelated; }
+.mfa-manual-key { margin: 0 0 8px; color: var(--muted); font-size: 12px; text-align: center; }
+.auth-form + .auth-form { margin-top: 10px; }
+.auth-form .secondary-button { width: 100%; min-height: 40px; }
 .oidc-login-button:hover { border-color: #687a70; background: var(--surface-raised); }
 .oidc-login-button svg { width: 17px; color: var(--blue); }
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #77827c; font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
@@ -214,6 +220,7 @@ h3 { margin-bottom: 6px; font-size: 15px; }
 .form-footer { margin-top: 22px; color: var(--muted); font-size: 13px; }
 .form-footer a { color: var(--lime); font-weight: 800; }
 .flash { margin-bottom: 18px; border: 1px solid rgba(199,244,100,.35); border-radius: 5px; background: rgba(199,244,100,.08); color: #d9f7a2; padding: 11px 12px; font-size: 12px; }
+.mfa-setup-button { display: inline-flex; align-items: center; justify-content: center; min-width: 88px; white-space: nowrap; }
 .about-hero { display: flex; align-items: center; gap: 32px; margin-bottom: 24px; }
 .about-hero-media { flex: 0 0 120px; width: 120px; height: 120px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #141816; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
 .about-logo { width: 100%; height: 100%; object-fit: cover; display: block; }

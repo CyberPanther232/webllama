@@ -1,4 +1,4 @@
-from .. import app, oauth
+from .. import app, db, oauth
 import json
 import os
 
@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 from .. import bcrypt
 import requests
 from .database import add_chat_message, build_chat_context, create_chat, delete_user_chat, get_chat_messages, get_context_window_tokens, get_oauth_settings, get_ollama_connection, get_settings, get_user_chat, get_user_chats, save_oauth_settings, save_ollama_connection, save_selected_model, save_settings, set_chat_title_from_prompt
-from .auth import authenticate_user, csrf_protect, get_current_user, get_or_create_oidc_user, login_required, login_user, logout_user, register_user, safe_next_url
+from .auth import authenticate_user, csrf_protect, get_current_user, get_or_create_oidc_user, login_required, login_user, logout_user, register_user, safe_next_url, generate_mfa_secret, get_totp_qr_data_uri, get_totp_uri, verify_mfa_token
 from .ollama import OllamaRequestError, delete_ollama_model, generate_chat_response, list_ollama_models, pull_ollama_model, stream_chat_response
 
 
@@ -104,6 +104,7 @@ def settings():
         context_window_tokens=get_context_window_tokens(),
         oauth_settings=oauth_settings,
         oauth_sources=oauth_sources,
+        mfa_enabled=bool(get_current_user().mfa_secret),
     )
 
 @app.route("/about", methods=["GET"])
@@ -126,6 +127,46 @@ def login():
         return redirect(safe_next_url(request.args.get("next")) or url_for('index'))
 
     return render_template("login.html", **get_oidc_login_context())
+
+@app.route("/mfa/setup", methods=["GET", "POST"])
+@login_required
+@csrf_protect
+def mfa_setup():
+    user = get_current_user()
+    if user is None:
+        return redirect(url_for("login"))
+    secret = session.get("mfa_setup_secret")
+    if not isinstance(secret, str):
+        secret = generate_mfa_secret()
+        session["mfa_setup_secret"] = secret
+    if request.method == "POST":
+        if verify_mfa_token(secret, request.form.get("token", "")):
+            user.mfa_secret = secret
+            db.session.commit()
+            session.pop("mfa_setup_secret", None)
+            flash("Multi-factor authentication is enabled.")
+            return redirect(url_for("index"))
+        flash("Invalid authenticator code. Please try again.")
+    uri = get_totp_uri(secret, user.username, "Webllama")
+    return render_template("mfa_setup.html", secret=secret, uri=uri, qr_data_uri=get_totp_qr_data_uri(uri))
+
+@app.route("/mfa/verify", methods=["GET", "POST"])
+@csrf_protect
+def mfa_verify():
+    user = get_current_user()
+    if user is None:
+        return redirect(url_for("login"))
+    if not user.mfa_secret:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        token = request.form.get("token", "")
+        if verify_mfa_token(user.mfa_secret, token):
+            session["mfa_verified"] = True
+            flash("MFA verification successful.")
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid MFA token.")
+    return render_template("mfa_verify.html")
 
 
 @app.route("/auth/oidc/login", methods=["GET"])
@@ -186,7 +227,6 @@ def register():
 
 
 @app.route("/logout", methods=["POST"])
-@login_required
 @csrf_protect
 def logout():
     logout_user()
